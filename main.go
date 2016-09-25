@@ -12,10 +12,10 @@ type Flow interface {
 }
 
 type flow struct {
-	funcs map[string]*FlowStuct
+	funcs map[string]*FlowStruct
 }
 
-type FlowStuct struct {
+type FlowStruct struct {
 	Deps    []string
 	Counter int
 	Fn      func(*Results) (interface{}, error)
@@ -23,12 +23,12 @@ type FlowStuct struct {
 
 func New() *flow {
 	a := &flow{}
-	a.funcs = make(map[string]*FlowStuct)
+	a.funcs = make(map[string]*FlowStruct)
 	return a
 }
 
 func (a *flow) Add(name string, d []string, f func(res *Results) (interface{}, error)) *flow {
-	a.funcs[name] = &FlowStuct{
+	a.funcs[name] = &FlowStruct{
 		Deps:    d,
 		Fn:      f,
 		Counter: 1, // prevent deadlock
@@ -64,7 +64,8 @@ func (a *flow) do() (*Results, error) {
 	}
 
 	for name, v := range a.funcs {
-		go func(name string, v *FlowStuct) {
+		go func(name string, v *FlowStruct) {
+			defer close(flow[name])
 			results := make(Results, len(v.Deps))
 
 			// drain dependency results
@@ -81,7 +82,6 @@ func (a *flow) do() (*Results, error) {
 				lastErr = err
 				return
 			}
-			res[name] = r
 			for i := 0; i < v.Counter; i++ {
 				flow[name] <- r
 			}
@@ -90,7 +90,7 @@ func (a *flow) do() (*Results, error) {
 
 	// wait for all
 	for name, _ := range a.funcs {
-		<-flow[name]
+		res[name] = <-flow[name]
 	}
 
 	return &res, lastErr
