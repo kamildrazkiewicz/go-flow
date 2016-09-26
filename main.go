@@ -22,74 +22,74 @@ type FlowStruct struct {
 }
 
 func New() *flow {
-	a := &flow{}
-	a.funcs = make(map[string]*FlowStruct)
-	return a
+	f := &flow{}
+	f.funcs = make(map[string]*FlowStruct)
+	return f
 }
 
-func (a *flow) Add(name string, d []string, f func(res *Results) (interface{}, error)) *flow {
-	a.funcs[name] = &FlowStruct{
+func (f *flow) Add(name string, d []string, fn func(res *Results) (interface{}, error)) *flow {
+	f.funcs[name] = &FlowStruct{
 		Deps:    d,
-		Fn:      f,
+		Fn:      fn,
 		Counter: 1, // prevent deadlock
 	}
-	return a
+	return f
 }
 
-func (a *flow) Do() (*Results, error) {
-	for fname, fn := range a.funcs {
+func (f *flow) Do() (*Results, error) {
+	for fname, fn := range f.funcs {
 		for _, dep := range fn.Deps {
 			// prevent self depends
 			if dep == fname {
 				return nil, errors.New(fmt.Sprintf("Error: Function \"%s\" depends of it self!", fname))
 			}
 			// prevent no existing dependencies
-			if _, exists := a.funcs[dep]; exists == false {
+			if _, exists := f.funcs[dep]; exists == false {
 				return nil, errors.New(fmt.Sprintf("Error: Function \"%s\" not exists!", dep))
 			}
-			a.funcs[dep].Counter++
+			f.funcs[dep].Counter++
 		}
 	}
-	return a.do()
+	return f.do()
 }
 
-func (a *flow) do() (*Results, error) {
+func (f *flow) do() (*Results, error) {
 	var lastErr error
-	res := make(Results, len(a.funcs))
+	res := make(Results, len(f.funcs))
 
 	// create flow channels
 	flow := make(map[string]chan interface{})
-	for name, _ := range a.funcs {
+	for name, _ := range f.funcs {
 		flow[name] = make(chan interface{})
 	}
 
-	for name, v := range a.funcs {
-		go func(name string, v *FlowStruct) {
+	for name, v := range f.funcs {
+		go func(name string, fs *FlowStruct) {
 			defer close(flow[name])
-			results := make(Results, len(v.Deps))
+			results := make(Results, len(fs.Deps))
 
 			// drain dependency results
-			for _, dep := range v.Deps {
+			for _, dep := range fs.Deps {
 				results[dep] = <-flow[dep]
 			}
 
-			r, err := v.Fn(&results)
+			r, err := fs.Fn(&results)
 			if err != nil {
 				// close all channels
-				for name, _ := range a.funcs {
+				for name, _ := range f.funcs {
 					close(flow[name])
 				}
 				lastErr = err
 				return
 			}
-			for i := 0; i < v.Counter; i++ {
+			for i := 0; i < fs.Counter; i++ {
 				flow[name] <- r
 			}
 		}(name, v)
 	}
 
 	// wait for all
-	for name, _ := range a.funcs {
+	for name, _ := range f.funcs {
 		res[name] = <-flow[name]
 	}
 
