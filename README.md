@@ -1,6 +1,7 @@
 # Goflow
 
 [![GoDoc](http://godoc.org/github.com/kamildrazkiewicz/go-flow?status.svg)](http://godoc.org/github.com/kamildrazkiewicz/go-flow)
+
 Goflow is a simply package to control goroutines based on dependencies.
 
 ## Install
