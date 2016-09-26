@@ -58,9 +58,9 @@ func (f *flow) do() (*Results, error) {
 	res := make(Results, len(f.funcs))
 
 	// create flow channels
-	flow := make(map[string]chan interface{})
-	for name, _ := range f.funcs {
-		flow[name] = make(chan interface{})
+	flow := make(map[string]chan interface{}, len(f.funcs))
+	for name, v := range f.funcs {
+		flow[name] = make(chan interface{}, v.Counter)
 	}
 
 	for name, v := range f.funcs {
