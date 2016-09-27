@@ -2,7 +2,7 @@
 
 [![GoDoc](http://godoc.org/github.com/kamildrazkiewicz/go-flow?status.svg)](http://godoc.org/github.com/kamildrazkiewicz/go-flow)
 
-Goflow is a simply package to control goroutines based on dependencies.
+Goflow is a simply package to control goroutines based on dependencies. It works like ```async.auto``` from [node.js async package](https://github.com/caolan/async), but for Go.
 
 ## Install
 
