@@ -3,15 +3,18 @@ package main
 import (
 	"fmt"
 	"kamildrazkiewicz/go-flow"
+	"time"
 )
 
 func main() {
 	f1 := func(r *goflow.Results) (interface{}, error) {
 		fmt.Println("function1 started")
+		time.Sleep(time.Millisecond * 1000)
 		return 1, nil
 	}
 
 	f2 := func(r *goflow.Results) (interface{}, error) {
+		time.Sleep(time.Millisecond * 1000)
 		fmt.Println("function2 started", (*r)["f1"])
 		return "some results", nil
 	}
