@@ -9,7 +9,6 @@ import (
 type Results map[string]interface{}
 
 type Flow interface {
-	New() *flow
 	Add(name string, d []string, fn func(res *Results) (interface{}, error)) *flow
 	Do() (*Results, error)
 }
