@@ -5,7 +5,7 @@
 
 
 
-Goflow is a simply package to control goroutines execution order based on dependencies. It works like ```async.auto``` from [node.js async package](https://github.com/caolan/async), but for Go.
+Goflow is a simply package to control goroutines execution order based on dependencies. It works similar to ```async.auto``` from [node.js async package](https://github.com/caolan/async), but for Go.
 
 ## Install
 
