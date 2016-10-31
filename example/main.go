@@ -7,24 +7,24 @@ import (
 )
 
 func main() {
-	f1 := func(r *goflow.Results) (interface{}, error) {
+	f1 := func(r map[string]interface{}) (interface{}, error) {
 		fmt.Println("function1 started")
 		time.Sleep(time.Millisecond * 1000)
 		return 1, nil
 	}
 
-	f2 := func(r *goflow.Results) (interface{}, error) {
+	f2 := func(r map[string]interface{}) (interface{}, error) {
 		time.Sleep(time.Millisecond * 1000)
-		fmt.Println("function2 started", (*r)["f1"])
+		fmt.Println("function2 started", r["f1"])
 		return "some results", nil
 	}
 
-	f3 := func(r *goflow.Results) (interface{}, error) {
-		fmt.Println("function3 started", (*r)["f1"])
+	f3 := func(r map[string]interface{}) (interface{}, error) {
+		fmt.Println("function3 started", r["f1"])
 		return nil, nil
 	}
 
-	f4 := func(r *goflow.Results) (interface{}, error) {
+	f4 := func(r map[string]interface{}) (interface{}, error) {
 		fmt.Println("function4 started", r)
 		return nil, nil
 	}

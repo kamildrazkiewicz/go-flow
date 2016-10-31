@@ -6,11 +6,9 @@ import (
 	"sync/atomic"
 )
 
-type Results map[string]interface{}
-
 type Flow interface {
-	Add(name string, d []string, fn func(res *Results) (interface{}, error)) *flow
-	Do() (*Results, error)
+	Add(name string, d []string, fn func(res map[string]interface{}) (interface{}, error)) *flow
+	Do() (map[string]interface{}, error)
 }
 
 type flow struct {
@@ -20,7 +18,7 @@ type flow struct {
 type FlowStruct struct {
 	Deps    []string
 	Counter int
-	Fn      func(*Results) (interface{}, error)
+	Fn      func(map[string]interface{}) (interface{}, error)
 }
 
 func New() *flow {
@@ -29,7 +27,7 @@ func New() *flow {
 	return f
 }
 
-func (f *flow) Add(name string, d []string, fn func(res *Results) (interface{}, error)) *flow {
+func (f *flow) Add(name string, d []string, fn func(res map[string]interface{}) (interface{}, error)) *flow {
 	f.funcs[name] = &FlowStruct{
 		Deps:    d,
 		Fn:      fn,
@@ -38,7 +36,7 @@ func (f *flow) Add(name string, d []string, fn func(res *Results) (interface{}, 
 	return f
 }
 
-func (f *flow) Do() (*Results, error) {
+func (f *flow) Do() (map[string]interface{}, error) {
 	for fname, fn := range f.funcs {
 		for _, dep := range fn.Deps {
 			// prevent self depends
@@ -55,10 +53,10 @@ func (f *flow) Do() (*Results, error) {
 	return f.do()
 }
 
-func (f *flow) do() (*Results, error) {
+func (f *flow) do() (map[string]interface{}, error) {
 	var lastErr error
 	var closed atomic.Value
-	res := make(Results, len(f.funcs))
+	res := make(map[string]interface{}, len(f.funcs))
 
 	// create flow channels
 	flow := make(map[string]chan interface{}, len(f.funcs))
@@ -75,14 +73,14 @@ func (f *flow) do() (*Results, error) {
 				close(flow[name])
 			}()
 
-			results := make(Results, len(fs.Deps))
+			results := make(map[string]interface{}, len(fs.Deps))
 
 			// drain dependency results
 			for _, dep := range fs.Deps {
 				results[dep] = <-flow[dep]
 			}
 
-			r, err := fs.Fn(&results)
+			r, err := fs.Fn(results)
 			if err != nil {
 				// close all channels
 				for name, _ := range f.funcs {
@@ -107,5 +105,5 @@ func (f *flow) do() (*Results, error) {
 		res[name] = <-flow[name]
 	}
 
-	return &res, lastErr
+	return res, lastErr
 }

@@ -15,7 +15,7 @@ func TestNew(t *testing.T) {
 
 func TestAdd1(t *testing.T) {
 	gf := New()
-	gf.Add("test", []string{"dep1"}, func(res *Results) (interface{}, error) {
+	gf.Add("test", []string{"dep1"}, func(res map[string]interface{}) (interface{}, error) {
 		return "test result", nil
 	})
 	_, err := gf.Do()
@@ -27,7 +27,7 @@ func TestAdd1(t *testing.T) {
 
 func TestAdd2(t *testing.T) {
 	gf := New()
-	gf.Add("test", []string{"test"}, func(res *Results) (interface{}, error) {
+	gf.Add("test", []string{"test"}, func(res map[string]interface{}) (interface{}, error) {
 		return "test result", nil
 	})
 	_, err := gf.Do()
@@ -39,12 +39,12 @@ func TestAdd2(t *testing.T) {
 
 func TestDo1(t *testing.T) {
 	gf := New()
-	gf.Add("test", []string{}, func(res *Results) (interface{}, error) {
+	gf.Add("test", []string{}, func(res map[string]interface{}) (interface{}, error) {
 		return "test result", nil
 	})
 	res, err := gf.Do()
 
-	if err != nil || (*res)["test"] != "test result" {
+	if err != nil || res["test"] != "test result" {
 		t.Error("Incorrect result")
 	}
 }
@@ -52,12 +52,12 @@ func TestDo1(t *testing.T) {
 func TestDo2(t *testing.T) {
 	var shouldBeFalse bool = false
 	gf := New()
-	gf.Add("first", []string{}, func(res *Results) (interface{}, error) {
+	gf.Add("first", []string{}, func(res map[string]interface{}) (interface{}, error) {
 		time.Sleep(time.Second * 1)
 		shouldBeFalse = true
 		return "first result", nil
 	})
-	gf.Add("second", []string{"first"}, func(res *Results) (interface{}, error) {
+	gf.Add("second", []string{"first"}, func(res map[string]interface{}) (interface{}, error) {
 		shouldBeFalse = false
 		return "second result", nil
 	})
@@ -70,16 +70,16 @@ func TestDo2(t *testing.T) {
 
 func TestDo3(t *testing.T) {
 	gf := New()
-	gf.Add("first", []string{}, func(res *Results) (interface{}, error) {
+	gf.Add("first", []string{}, func(res map[string]interface{}) (interface{}, error) {
 		return "first result", nil
 	})
-	gf.Add("second", []string{"first"}, func(res *Results) (interface{}, error) {
+	gf.Add("second", []string{"first"}, func(res map[string]interface{}) (interface{}, error) {
 		return "second result", nil
 	})
 	res, err := gf.Do()
 
-	firstResult := (*res)["first"]
-	secondResult := (*res)["second"]
+	firstResult := res["first"]
+	secondResult := res["second"]
 
 	if err != nil || firstResult != "first result" || secondResult != "second result" {
 		t.Error("Incorrect results")
@@ -88,10 +88,10 @@ func TestDo3(t *testing.T) {
 
 func TestDo4(t *testing.T) {
 	gf := New()
-	gf.Add("first", []string{}, func(res *Results) (interface{}, error) {
+	gf.Add("first", []string{}, func(res map[string]interface{}) (interface{}, error) {
 		return "first result", errors.New("some error")
 	})
-	gf.Add("second", []string{"first"}, func(res *Results) (interface{}, error) {
+	gf.Add("second", []string{"first"}, func(res map[string]interface{}) (interface{}, error) {
 		return "second result", nil
 	})
 	_, err := gf.Do()
