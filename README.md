@@ -5,7 +5,7 @@
 
 
 
-Goflow is a simply package to control goroutines based on dependencies. It works like ```async.auto``` from [node.js async package](https://github.com/caolan/async), but for Go.
+Goflow is a simply package to control goroutines execution order based on dependencies. It works similar to ```async.auto``` from [node.js async package](https://github.com/caolan/async), but for Go.
 
 ## Install
 
@@ -31,15 +31,18 @@ package main
 import (
 	"fmt"
 	"github.com/kamildrazkiewicz/go-flow"
+	"time"
 )
 
 func main() {
 	f1 := func(r *goflow.Results) (interface{}, error) {
 		fmt.Println("function1 started")
+		time.Sleep(time.Millisecond * 1000)
 		return 1, nil
 	}
 
 	f2 := func(r *goflow.Results) (interface{}, error) {
+		time.Sleep(time.Millisecond * 1000)
 		fmt.Println("function2 started", (*r)["f1"])
 		return "some results", nil
 	}
@@ -64,4 +67,13 @@ func main() {
 	fmt.Println(res, err)
 }
 
+```
+
+Output will be:
+```
+function1 started
+function3 started 1
+function2 started 1
+function4 started &map[f2:some results f3:<nil>]
+&map[f1:1 f2:some results f3:<nil> f4:<nil>] <nil>
 ```
