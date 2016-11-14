@@ -70,6 +70,10 @@ func main() {
 
 ```
 
+Visualization:
+
+![GoFlow](http://i.imgur.com/FBVxYko.png)
+
 Output will be:
 ```
 function1 started
