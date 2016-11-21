@@ -1,34 +1,35 @@
 package goflow
 
 import (
-	"errors"
 	"fmt"
 	"sync/atomic"
 )
 
+// Flow interface
 type Flow interface {
 	Add(name string, d []string, fn func(res map[string]interface{}) (interface{}, error)) *flow
 	Do() (map[string]interface{}, error)
 }
 
 type flow struct {
-	funcs map[string]*FlowStruct
+	funcs map[string]*flowStruct
 }
 
-type FlowStruct struct {
+type flowStruct struct {
 	Deps    []string
 	Counter int
 	Fn      func(map[string]interface{}) (interface{}, error)
 }
 
+// New flow struct
 func New() *flow {
 	f := &flow{}
-	f.funcs = make(map[string]*FlowStruct)
+	f.funcs = make(map[string]*flowStruct)
 	return f
 }
 
 func (f *flow) Add(name string, d []string, fn func(res map[string]interface{}) (interface{}, error)) *flow {
-	f.funcs[name] = &FlowStruct{
+	f.funcs[name] = &flowStruct{
 		Deps:    d,
 		Fn:      fn,
 		Counter: 1, // prevent deadlock
@@ -41,11 +42,12 @@ func (f *flow) Do() (map[string]interface{}, error) {
 		for _, dep := range fn.Deps {
 			// prevent self depends
 			if dep == fname {
-				return nil, errors.New(fmt.Sprintf("Error: Function \"%s\" depends of it self!", fname))
+
+				return nil, fmt.Errorf("Error: Function \"%s\" depends of it self!", fname)
 			}
 			// prevent no existing dependencies
 			if _, exists := f.funcs[dep]; exists == false {
-				return nil, errors.New(fmt.Sprintf("Error: Function \"%s\" not exists!", dep))
+				return nil, fmt.Errorf("Error: Function \"%s\" not exists!", dep)
 			}
 			f.funcs[dep].Counter++
 		}
@@ -65,7 +67,7 @@ func (f *flow) do() (map[string]interface{}, error) {
 	}
 
 	for name, v := range f.funcs {
-		go func(name string, fs *FlowStruct) {
+		go func(name string, fs *flowStruct) {
 			defer func() {
 				if closed.Load() == true {
 					return
@@ -83,7 +85,7 @@ func (f *flow) do() (map[string]interface{}, error) {
 			r, err := fs.Fn(results)
 			if err != nil {
 				// close all channels
-				for name, _ := range f.funcs {
+				for name := range f.funcs {
 					close(flow[name])
 				}
 				closed.Store(true)
@@ -101,7 +103,7 @@ func (f *flow) do() (map[string]interface{}, error) {
 	}
 
 	// wait for all
-	for name, _ := range f.funcs {
+	for name := range f.funcs {
 		res[name] = <-flow[name]
 	}
 
