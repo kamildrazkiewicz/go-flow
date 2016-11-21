@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"kamildrazkiewicz/go-flow"
 	"time"
+
+	"github.com/kamildrazkiewicz/go-flow"
 )
 
 func main() {
