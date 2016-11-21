@@ -2,10 +2,9 @@
 
 [![GoDoc](http://godoc.org/github.com/kamildrazkiewicz/go-flow?status.svg)](http://godoc.org/github.com/kamildrazkiewicz/go-flow) [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](http://godoc.org/github.com/kamildrazkiewicz/go-flow) [![Release](https://img.shields.io/github/release/kamildrazkiewicz/go-flow.svg?label=Release)](http://godoc.org/github.com/kamildrazkiewicz/go-flow) [![GoReport](https://goreportcard.com/badge/github.com/kamildrazkiewicz/go-flow)](https://goreportcard.com/report/github.com/kamildrazkiewicz/go-flow) [![Travis](https://travis-ci.org/kamildrazkiewicz/go-flow.svg?branch=master)](https://travis-ci.org/kamildrazkiewicz/go-flow) [![Coverage](http://coveralls.io/repos/github/kamildrazkiewicz/go-flow/badge.svg?branch=master)](https://coveralls.io/github/kamildrazkiewicz/go-flow?branch=master)
 
-
-
-
 Goflow is a simply package to control goroutines execution order based on dependencies. It works similar to ```async.auto``` from [node.js async package](https://github.com/caolan/async), but for Go.
+
+![GoFlowLogo](http://i.imgur.com/TphzNch.png)
 
 ## Install
 
@@ -69,10 +68,6 @@ func main() {
 
 
 ```
-
-Visualization:
-
-![GoFlow](http://i.imgur.com/0g1Pg8A.png)
 
 Output will be:
 ```
