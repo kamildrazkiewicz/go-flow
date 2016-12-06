@@ -19,6 +19,7 @@ type flowStruct struct {
 	Deps    []string
 	Counter int
 	Fn      func(map[string]interface{}) (interface{}, error)
+	closed  atomic.Value
 }
 
 // New flow struct
@@ -57,7 +58,6 @@ func (f *flow) Do() (map[string]interface{}, error) {
 
 func (f *flow) do() (map[string]interface{}, error) {
 	var lastErr error
-	var closed atomic.Value
 	res := make(map[string]interface{}, len(f.funcs))
 
 	// create flow channels
@@ -69,7 +69,7 @@ func (f *flow) do() (map[string]interface{}, error) {
 	for name, v := range f.funcs {
 		go func(name string, fs *flowStruct) {
 			defer func() {
-				if closed.Load() == true {
+				if true == fs.closed.Load() {
 					return
 				}
 				close(flow[name])
@@ -85,15 +85,18 @@ func (f *flow) do() (map[string]interface{}, error) {
 			r, err := fs.Fn(results)
 			if err != nil {
 				// close all channels
-				for name := range f.funcs {
-					close(flow[name])
+				for name, v := range f.funcs {
+					if false == v.closed.Load() {
+						close(flow[name])
+						v.closed.Store(true)
+					}
+
 				}
-				closed.Store(true)
 				lastErr = err
 
 				return
 			}
-			if closed.Load() == true {
+			if true == fs.closed.Load() {
 				return
 			}
 			for i := 0; i < fs.Counter; i++ {
