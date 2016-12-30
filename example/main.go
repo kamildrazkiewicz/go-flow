@@ -17,7 +17,7 @@ func main() {
 	f2 := func(r map[string]interface{}) (interface{}, error) {
 		time.Sleep(time.Millisecond * 1000)
 		fmt.Println("function2 started", r["f1"])
-		return "some results", nil
+		return "some results", nil // errors.New("Some error")
 	}
 
 	f3 := func(r map[string]interface{}) (interface{}, error) {

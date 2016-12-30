@@ -2,7 +2,7 @@ package goflow
 
 import (
 	"fmt"
-	"sync/atomic"
+	"sync"
 )
 
 // Flow interface
@@ -16,24 +16,35 @@ type flow struct {
 }
 
 type flowStruct struct {
-	Deps    []string
-	Counter int
-	Fn      func(map[string]interface{}) (interface{}, error)
-	closed  atomic.Value
+	Deps []string
+	Ctr  int
+	Fn   func(map[string]interface{}) (interface{}, error)
+	C    chan interface{}
+	once sync.Once
+}
+
+func (fs *flowStruct) Close() {
+	fs.once.Do(func() {
+		close(fs.C)
+	})
+}
+
+func (fs *flowStruct) init() {
+	fs.C = make(chan interface{}, fs.Ctr)
 }
 
 // New flow struct
 func New() *flow {
-	f := &flow{}
-	f.funcs = make(map[string]*flowStruct)
-	return f
+	return &flow{
+		funcs: make(map[string]*flowStruct),
+	}
 }
 
 func (f *flow) Add(name string, d []string, fn func(res map[string]interface{}) (interface{}, error)) *flow {
 	f.funcs[name] = &flowStruct{
-		Deps:    d,
-		Fn:      fn,
-		Counter: 1, // prevent deadlock
+		Deps: d,
+		Fn:   fn,
+		Ctr:  1, // prevent deadlock
 	}
 	return f
 }
@@ -50,7 +61,7 @@ func (f *flow) Do() (map[string]interface{}, error) {
 			if _, exists := f.funcs[dep]; exists == false {
 				return nil, fmt.Errorf("Error: Function \"%s\" not exists!", dep)
 			}
-			f.funcs[dep].Counter++
+			f.funcs[dep].Ctr++
 		}
 	}
 	return f.do()
@@ -60,54 +71,39 @@ func (f *flow) do() (map[string]interface{}, error) {
 	var lastErr error
 	res := make(map[string]interface{}, len(f.funcs))
 
-	// create flow channels
-	flow := make(map[string]chan interface{}, len(f.funcs))
 	for name, v := range f.funcs {
-		flow[name] = make(chan interface{}, v.Counter)
-	}
-
-	for name, v := range f.funcs {
+		v.init()
 		go func(name string, fs *flowStruct) {
-			defer func() {
-				if true == fs.closed.Load() {
-					return
-				}
-				close(flow[name])
-			}()
-
+			defer func() { fs.Close() }()
 			results := make(map[string]interface{}, len(fs.Deps))
 
 			// drain dependency results
 			for _, dep := range fs.Deps {
-				results[dep] = <-flow[dep]
+				results[dep] = <-f.funcs[dep].C
 			}
 
 			r, err := fs.Fn(results)
 			if err != nil {
 				// close all channels
-				for name, v := range f.funcs {
-					if false == v.closed.Load() {
-						close(flow[name])
-						v.closed.Store(true)
-					}
-
+				for _, v := range f.funcs {
+					v.Close()
 				}
 				lastErr = err
-
 				return
 			}
-			if true == fs.closed.Load() {
+			// exit if error
+			if lastErr != nil {
 				return
 			}
-			for i := 0; i < fs.Counter; i++ {
-				flow[name] <- r
+			for i := 0; i < fs.Ctr; i++ {
+				fs.C <- r
 			}
 		}(name, v)
 	}
 
 	// wait for all
-	for name := range f.funcs {
-		res[name] = <-flow[name]
+	for name, fs := range f.funcs {
+		res[name] = <-fs.C
 	}
 
 	return res, lastErr
