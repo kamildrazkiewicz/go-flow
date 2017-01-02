@@ -5,13 +5,7 @@ import (
 	"sync"
 )
 
-// Flow interface
-type Flow interface {
-	Add(name string, d []string, fn func(res map[string]interface{}) (interface{}, error)) *flow
-	Do() (map[string]interface{}, error)
-}
-
-type flow struct {
+type Flow struct {
 	funcs map[string]*flowStruct
 }
 
@@ -42,13 +36,13 @@ func (fs *flowStruct) Init() {
 }
 
 // New flow struct
-func New() *flow {
-	return &flow{
+func New() *Flow {
+	return &Flow{
 		funcs: make(map[string]*flowStruct),
 	}
 }
 
-func (flw *flow) Add(name string, d []string, fn flowFunc) *flow {
+func (flw *Flow) Add(name string, d []string, fn flowFunc) *Flow {
 	flw.funcs[name] = &flowStruct{
 		Deps: d,
 		Fn:   fn,
@@ -57,7 +51,7 @@ func (flw *flow) Add(name string, d []string, fn flowFunc) *flow {
 	return flw
 }
 
-func (flw *flow) Do() (map[string]interface{}, error) {
+func (flw *Flow) Do() (map[string]interface{}, error) {
 	for name, fn := range flw.funcs {
 		for _, dep := range fn.Deps {
 			// prevent self depends
@@ -74,7 +68,7 @@ func (flw *flow) Do() (map[string]interface{}, error) {
 	return flw.do()
 }
 
-func (flw *flow) do() (map[string]interface{}, error) {
+func (flw *Flow) do() (map[string]interface{}, error) {
 	var err error
 	res := make(map[string]interface{}, len(flw.funcs))
 
