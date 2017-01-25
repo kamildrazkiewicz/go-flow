@@ -74,6 +74,6 @@ Output will be:
 function1 started
 function3 started 1
 function2 started 1
-function4 started &map[f2:some results f3:<nil>]
-&map[f1:1 f2:some results f3:<nil> f4:<nil>] <nil>
+function4 started map[f2:some results f3:<nil>]
+map[f1:1 f2:some results f3:<nil> f4:<nil>] <nil>
 ```
