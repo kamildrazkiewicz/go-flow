@@ -72,8 +72,10 @@ func (flw *Flow) do() (map[string]interface{}, error) {
 	var err error
 	res := make(map[string]interface{}, len(flw.funcs))
 
-	for name, f := range flw.funcs {
+	for _, f := range flw.funcs{
 		f.Init()
+	}
+	for name, f := range flw.funcs {
 		go func(name string, fs *flowStruct) {
 			defer func() { fs.Close() }()
 			results := make(map[string]interface{}, len(fs.Deps))
