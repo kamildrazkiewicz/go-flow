@@ -70,9 +70,10 @@ func (flw *Flow) Do() (map[string]interface{}, error) {
 
 func (flw *Flow) do() (map[string]interface{}, error) {
 	var err error
+	var errLock sync.RWMutex
 	res := make(map[string]interface{}, len(flw.funcs))
 
-	for _, f := range flw.funcs{
+	for _, f := range flw.funcs {
 		f.Init()
 	}
 	for name, f := range flw.funcs {
@@ -91,13 +92,18 @@ func (flw *Flow) do() (map[string]interface{}, error) {
 				for _, fn := range flw.funcs {
 					fn.Close()
 				}
+				errLock.Lock()
+				defer errLock.Unlock()
 				err = fnErr
 				return
 			}
 			// exit if error
+			errLock.RLock()
 			if err != nil {
+				errLock.RUnlock()
 				return
 			}
+			errLock.RUnlock()
 			fs.Done(r)
 
 		}(name, f)
@@ -108,5 +114,7 @@ func (flw *Flow) do() (map[string]interface{}, error) {
 		res[name] = <-fs.C
 	}
 
+	errLock.RLock()
+	defer errLock.RUnlock()
 	return res, err
 }
